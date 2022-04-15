@@ -1,0 +1,141 @@
+https://github.com/SBoyNumber1/LSTM-video-classification
+
+Trong một số trường hợp, chúng ta không biết trước số lượng đối số truyền vào một hàm khi gọi hàm. 
+Python cho phép truyền số lượng đối số khác cho mỗi lần gọi hàm bằng cách sử dụng các dấu hoa thị * (asterisk). 
+Có 2 cách sử dụng dấu hoa thị * trong trường hợp này là:
+
+*args (Non-Keyword Arguments)
+**kwargs (Keyword Arguments)
+
+Sử dụng *args (Non-Keyword Arguments)
+Sử dụng một dấu hoa thị * trước tên tham số để sử dụng Non-Keyword Arguments. 
+Tên tham số tuân thủ theo quy tắc đặt tên định danh (identifier).
+Nguyên tắc hoạt động của Non-Keyword Arguments là các đối số được đưa vào trong một tuple. 
+Chúng ta sử dụng for để duyệt qua từng phần tử trong tuple này.
+def hello(*names):
+    """Say hello to all person in names"""
+    for name in names:
+        print("Hello", name)
+
+hello("John", "James", "Mary", "Robert", "Jennifer")
+
+Sử dụng **kwargs (Keyword Arguments)
+Sử dụng hai dấu hoa thị ** trước tên tham số để sử dụng Keyword Arguments. 
+Các đối số được truyền vào hàm đều có một tên định danh (identifier) đại diện.
+Kí tự ‘**’ khi gọi hàm, để hỗ trợ truyền tham số khi sử dụng dictionary chỉ tường minh tên tham số.
+def hello(**notices):
+    """Send notices to all person"""
+    for key, value in notices.items():
+        print("%s, %s" % (key, value))
+
+hello(John="How are you?", James="Welcome to Gochocit.com!", Mary="Nice to meet you!")
+
+import threading
+from tensorflow.keras.utils import to_categorical
+from videolibs import process_image
+
+"""
+Link: https://anandology.com/blog/using-iterators-and-generators/
+In the iterator case, it only creates a race condition as multiple threads are trying to update self.i at the same time.
+That is the reason for seeing wrong output, and it will change everytime we run the program.
+This can be easily fixed by protecting that of code using a lock.
+"""
+class threadsafe_iterator:
+    """Takes an iterator/generator and makes it thread-safe by
+    serializing call to the `next` method of given iterator/generator.
+    """
+    def __init__(self, iterator):
+        self.iterator = iterator
+        self.lock = threading.Lock()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with self.lock:
+            return next(self.iterator)
+
+# This can be made still easier by writing a decorator.
+
+"""
+A decorator in Python is a function that takes another function as its argument, and returns yet another function . 
+Decorators can be extremely useful as they allow the extension of an existing function,
+without any modification to the original function source code.
+"""
+
+def threadsafe_generator(func):
+    """
+    A decorator that takes a generator function and makes it thread-safe.
+    Now we can use this decorator to make any generator thread-safe.
+    yeild: a generator 
+    @threadsafe_generator
+    def function_name():
+        yield value
+    
+    """
+    def gen(*a, **kw):
+        return threadsafe_iterator(func(*a, **kw))
+    return gen
+
+
+class DataSet():
+
+    def __init__(self, seq_length=40, class_limit=None, image_shape=(299, 299, 3)):
+        """Constructor
+        seq_length = the number of frames per video
+        class_limit = the number of classes. None means no limit
+        """
+        self.seq_length = seq_length
+        self.class_limit = class_limit
+        self.max_frames = 50  # maximum number of frames per video
+
+        self.image_shape = image_shape
+
+
+"""
+https://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do
+
+To understand what yield does, you must understand what generators are. 
+And before you can understand generators, you must understand iterables.
+
+Iterables:
+When you create a list, you can read its items one by one. Reading its items one by one is called iteration:
+mylist = [1, 2, 3]
+for i in mylist: print(i)
+mylist is an iterable. When you use a list comprehension, you create a list, and so an iterable:
+mylist = [x*x for x in range(3)]
+for i in mylist: print(i)
+
+Everything you can use "for... in..." on is an iterable; lists, strings, files...
+
+These iterables are handy because you can read them as much as you wish, but you store all the values in memory and this is not always what you want when you have a lot of values.
+
+Generators
+Generators are iterators, a kind of iterable you can only iterate over once. Generators do not store all the values in memory, they generate the values on the fly:
+mygenerator = (x*x for x in range(3))
+for i in mygenerator: print(i)
+
+It is just the same except you used () instead of []. 
+BUT, you cannot perform for i in mygenerator a second time since generators can only be used once: they calculate 0, then forget about it and calculate 1, and end calculating 4, one by one.
+
+Yield
+yield is a keyword that is used like return, except the function will return a generator.
+
+>>> def create_generator():
+...    mylist = range(3)
+...    for i in mylist:
+...        yield i*i
+...
+>>> mygenerator = create_generator() # create a generator
+>>> print(mygenerator) # mygenerator is an object!
+<generator object create_generator at 0xb7555c34>
+>>> for i in mygenerator:
+...     print(i)
+0
+1
+4
+
+Here it's a useless example, but it's handy when you know your function will return a huge set of values 
+that you will only need to read once.
+
+"""
