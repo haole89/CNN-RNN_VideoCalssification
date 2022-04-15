@@ -17,9 +17,10 @@ The results will save in numpy format for speedup training RNN model
 $ python features_extractor.py
 
 
-## Step 3: Train RNN model 
-## The model save in hd5 format in the folder: data/checkpoints/lstm.model
-## The labels save in binary formate in the folder: data/checkpoints/tag.pickle
+## Step 3: Train RNN model
+
+The model save in hd5 format in the folder: data/checkpoints/lstm.model
+The labels save in binary formate in the folder: data/checkpoints/tag.pickle
 
 $ python train.py
 
